@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+
+<html lang="hr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Crypto AI Trader</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;background:#080d18;color:#edf3ff;font-family:Arial,sans-serif}
+
+header{padding:20px 6%;background:#101a2b;border-bottom:1px solid #263650;display:flex;justify-content:space-between;align-items:center}
+
+.logo{font-size:21px;font-weight:bold}
+
+.logo span{color:#35d9a0}
+
+.status{color:#35d9a0;font-size:12px}
+
+main{max-width:1050px;margin:30px auto;padding:0 16px}
+
+h1{font-size:27px;margin-bottom:6px}
+
+.sub{color:#91a1bb;margin-bottom:24px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+
+.card{background:#111d30;border:1px solid #263650;border-radius:14px;padding:20px;margin-bottom:15px}
+
+.card h3{font-size:13px;color:#91a1bb;margin-top:0}
+
+.value{font-size:27px;font-weight:bold;margin:12px 0}
+
+.green{color:#35d9a0}
+
+.muted{color:#91a1bb;font-size:12px}
+
+input,select,textarea{width:100%;padding:12px;margin:8px 0;background:#091222;color:white;border:1px solid #344966;border-radius:8px}
+
+button{padding:12px;border:0;border-radius:8px;background:#35d9a0;color:#07150f;font-weight:bold;cursor:pointer;width:100%;margin-top:7px}
+
+button.secondary{background:#263650;color:white}
+
+button.danger{background:#a93e4b;color:white}
+
+button.small{width:auto;padding:8px 12px}
+
+section{margin-top:22px}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+
+td,th{text-align:left;padding:12px 7px;border-bottom:1px solid #263650}
+
+th{color:#91a1bb}
+
+.tablewrap{overflow-x:auto}
+
+.admin-title{display:flex;justify-content:space-between;align-items:center}
+
+footer{text-align:center;color:#71819b;padding:25px;font-size:12px}
+
+.hidden{display:none}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <div class="logo">CRYPTO AI <span>TRADER</span></div>
+
+  <div class="status">● ONLINE</div>
+
+</header>
+
+<main>
+
+<h1>Dashboard</h1>
+
+<p class="sub">Pregled digitalnog portfelja</p>
+
+<div class="grid">
+
+  <div class="card">
+
+    <h3>UKUPNI SALDO</h3>
+
+    <div class="value" id="balance">€0.00</div>
+
+    <div class="muted" id="balanceBTC">0 BTC</div>
+
+  </div>
+
+  <div class="card">
+
+    <h3>BITCOIN CIJENA</h3>
+
+    <div class="value" id="btcPrice">Učitavanje...</div>
+
+    <div class="muted" id="updated">Čekanje podataka</div>
+
+  </div>
+
+</div>
+
+<section class="grid">
+
+  <div class="card">
+
+    <h3>EUR ↔ BTC KALKULATOR</h3>
+
+    <label class="muted">Iznos u EUR</label>
+
+    <input type="number" id="eurInput" placeholder="0.00" min="0" step="any">
+
+    <label class="muted">Iznos u BTC</label>
+
+    <input type="number" id="btcInput" placeholder="0.00000000" min="0" step="any">
+
+    <p class="muted">Automatska konverzija prema BTC cijeni.</p>
+
+  </div>
+
+  <div class="card">
+
+    <h3>ZAHTJEV ZA ISPLATU</h3>
+
+    <label class="muted">Iznos u EUR</label>
+
+    <input type="number" id="withdrawEUR" placeholder="0.00" min="0" step="any">
+
+    <label class="muted">Iznos u BTC</label>
+
+    <input type="number" id="withdrawBTC" placeholder="0.00000000" min="0" step="any">
+
+    <label class="muted">BTC adresa</label>
+
+    <input type="text" id="btcAddress" placeholder="Unesi BTC adresu">
+
+    <button onclick="requestWithdrawal()">POŠALJI ZAHTJEV</button>
+
+    <p class="muted">Zahtjev se sprema kao virtualni zahtjev na čekanju.</p>
+
+  </div>
+
+</section>
+
+<section class="card">
+
+  <h3>TRANSAKCIJE</h3>
+
+  <div class="tablewrap">
+
+  <table>
+
+    <thead><tr><th>Datum</th><th>Opis</th><th>Iznos</th><th>Status</th></tr></thead>
+
+    <tbody id="transactions"></tbody>
+
+  </table>
+
+  </div>
+
+</section>
+
+<section class="card">
+
+  <h3>ZAHTJEVI ZA ISPLATU</h3>
+
+  <div class="tablewrap">
+
+  <table>
+
+    <thead><tr><th>Datum</th><th>BTC adresa</th><th>Iznos EUR</th><th>Iznos BTC</th><th>Status</th></tr></thead>
+
+    <tbody id="withdrawals"></tbody>
+
+  </table>
+
+  </div>
+
+</section>
+
+<section class="card">
+
+  <div class="admin-title">
+
+    <h3>ADMIN PANEL</h3>
+
+    <span class="green">● ACTIVE</span>
+
+  </div>
+
+  <label class="muted">Postavi saldo u EUR</label>
+
+  <input type="number" id="adminBalance" step="any" placeholder="Novi saldo">
+
+  <button onclick="setBalance()">SPREMI SALDO</button>
+
+  <hr style="border-color:#263650;margin:22px 0">
+
+  <h3>DODAJ TRANSAKCIJU</h3>
+
+  <input id="txDescription" placeholder="Opis transakcije">
+
+  <input id="txAmount" placeholder="Iznos EUR (npr. 50 ili -20)" type="number" step="any">
+
+  <button onclick="adminTransaction()">DODAJ TRANSAKCIJU</button>
+
+  <hr style="border-color:#263650;margin:22px 0">
+
+  <h3>ZAHTJEVI ZA ISPLATU</h3>
+
+  <p class="muted">Zahtjeve možeš odobriti ili odbiti. Odobrenje ovdje ne šalje stvarni BTC.</p>
+
+  <div id="adminWithdrawals"></div>
+
+  <hr style="border-color:#263650;margin:22px 0">
+
+  <h3>UREĐIVANJE TRANSAKCIJA</h3>
+
+  <div id="adminTransactions"></div>
+
+</section>
+
+<footer>
+
+CRYPTO AI TRADER<br>
+
+Virtualno testno okruženje. Nema stvarnih uplata, trgovanja ni blockchain isplata.
+
+</footer>
+
+</main>
+
+<script>
+
+const initialState = {
+
+  balance:0,
+
+  transactions:[],
+
+  withdrawals:[]
+
+};
+
+let state;
+
+try{
+
+  state=JSON.parse(localStorage.getItem("cryptoTraderState")) || initialState;
+
+  if(!Number.isFinite(state.balance) ||
+
+     !Array.isArray(state.transactions) ||
+
+     !Array.isArray(state.withdrawals)) throw new Error();
+
+}catch(e){
+
+  state=JSON.parse(JSON.stringify(initialState));
+
+}
+
+let btcPrice=0;
+
+function save(){
+
+  localStorage.setItem("cryptoTraderState",JSON.stringify(state));
+
+}
+
+function money(n){
+
+  return Number(n).toLocaleString("hr-HR",{
+
+    minimumFractionDigits:2,
+
+    maximumFractionDigits:2
+
+  });
+
+}
+
+function render(){
+
+  document.getElementById("balance").textContent="€"+money(state.balance);
+
+  document.getElementById("balanceBTC").textContent=
+
+    btcPrice ? (state.balance/btcPrice).toFixed(8)+" BTC" : "Cijena se učitava";
+
+  document.getElementById("transactions").innerHTML=
+
+    state.transactions.map(t=>`
+
+      <tr>
+
+        <td>${escapeHTML(t.date)}</td>
+
+        <td>${escapeHTML(t.description)}</td>
+
+        <td>${escapeHTML(t.amount)}</td>
+
+        <td>${escapeHTML(t.status)}</td>
+
+      </tr>`).join("") || `<tr><td colspan="4">Nema transakcija.</td></tr>`;
+
+  document.getElementById("withdrawals").innerHTML=
+
+    state.withdrawals.map(w=>`
+
+      <tr>
+
+        <td>${escapeHTML(w.date)}</td>
+
+        <td>${escapeHTML(w.address)}</td>
+
+        <td>€${money(w.eur)}</td>
+
+        <td>${Number(w.btc).toFixed(8)}</td>
+
+        <td>${escapeHTML(w.status)}</td>
+
+      </tr>`).join("") || `<tr><td colspan="5">Nema zahtjeva.</td></tr>`;
+
+  renderAdmin();
+
+}
+
+function escapeHTML(value){
+
+  return String(value).replace(/[&<>"']/g,c=>({
+
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+
+  }[c]));
+
+}
+
+function addTransaction(description,amount,status="Završeno"){
+
+  state.transactions.unshift({
+
+    date:new Date().toLocaleString("hr-HR"),
+
+    description,
+
+    amount,
+
+    status
+
+  });
+
+  save();
+
+  render();
+
+}
+
+function setBalance(){
+
+  const amount=Number(document.getElementById("adminBalance").value);
+
+  if(!Number.isFinite(amount)||amount<0){
+
+    alert("Unesi ispravan saldo.");
+
+    return;
+
+  }
+
+  state.balance=amount;
+
+  addTransaction("Promjena salda","€"+money(amount),"Administracija");
+
+  document.getElementById("adminBalance").value="";
+
+}
+
+function adminTransaction(){
+
+  const description=document.getElementById("txDescription").value.trim();
+
+  const amount=Number(document.getElementById("txAmount").value);
+
+  if(!description||!Number.isFinite(amount)||amount===0){
+
+    alert("Unesi opis i ispravan iznos.");
+
+    return;
+
+  }
+
+  state.balance+=amount;
+
+  addTransaction(description,(amount>0?"+":"")+"€"+money(amount));
+
+  document.getElementById("txDescription").value="";
+
+  document.getElementById("txAmount").value="";
+
+}
+
+function requestWithdrawal(){
+
+  const eur=Number(document.getElementById("withdrawEUR").value);
+
+  const address=document.getElementById("btcAddress").value.trim();
+
+  if(!btcPrice){
+
+    alert("BTC cijena još nije dostupna.");
+
+    return;
+
+  }
+
+  if(!Number.isFinite(eur)||eur<=0||eur>state.balance){
+
+    alert("Provjeri iznos i raspoloživi saldo.");
+
+    return;
+
+  }
+
+  if(!/^([13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{11,71})$/.test(address)){
+
+    alert("Unesi valjanu BTC adresu.");
+
+    return;
+
+  }
+
+  state.withdrawals.unshift({
+
+    date:new Date().toLocaleString("hr-HR"),
+
+    address,
+
+    eur,
+
+    btc:eur/btcPrice,
+
+    status:"Na čekanju"
+
+  });
+
+  save();
+
+  render();
+
+  document.getElementById("withdrawEUR").value="";
+
+  document.getElementById("withdrawBTC").value="";
+
+  document.getElementById("btcAddress").value="";
+
+  alert("Virtualni zahtjev je spremljen.");
+
+}
+
+function approveWithdrawal(index){
+
+  const w=state.withdrawals[index];
+
+  if(!w||w.status!=="Na čekanju")return;
+
+  if(w.eur>state.balance){
+
+    alert("Nema dovoljno sredstava.");
+
+    return;
+
+  }
+
+  w.status="Odobreno – virtualno";
+
+  state.balance-=w.eur;
+
+  state.transactions.unshift({
+
+    date:new Date().toLocaleString("hr-HR"),
+
+    description:"Virtualni zahtjev za isplatu",
+
+    amount:"-€"+money(w.eur),
+
+    status:"Odobreno – virtualno"
+
+  });
+
+  save();
+
+  render();
+
+}
+
+function rejectWithdrawal(index){
+
+  const w=state.withdrawals[index];
+
+  if(!w||w.status!=="Na čekanju")return;
+
+  const reason=prompt("Razlog odbijanja:");
+
+  if(reason===null)return;
+
+  w.status="Odbijeno: "+reason;
+
+  save();
+
+  render();
+
+}
+
+function deleteTransaction(index){
+
+  if(!confirm("Obrisati ovu transakciju?"))return;
+
+  state.transactions.splice(index,1);
+
+  save();
+
+  render();
+
+}
+
+function renderAdmin(){
+
+  document.getElementById("adminWithdrawals").innerHTML=
+
+    state.withdrawals.map((w,i)=>`
+
+      <div class="card">
+
+        <p><b>${escapeHTML(w.status)}</b></p>
+
+        <p class="muted">€${money(w.eur)} · ${Number(w.btc).toFixed(8)} BTC</p>
+
+        <p class="muted">${escapeHTML(w.address)}</p>
+
+        ${w.status==="Na čekanju"?`
+
+          <button onclick="approveWithdrawal(${i})">ODOBRI</button>
+
+          <button class="danger" onclick="rejectWithdrawal(${i})">ODBIJ</button>
+
+        `:""}
+
+      </div>`).join("") || `<p class="muted">Nema zahtjeva.</p>`;
+
+  document.getElementById("adminTransactions").innerHTML=
+
+    state.transactions.map((t,i)=>`
+
+      <div class="card">
+
+        <b>${escapeHTML(t.description)}</b>
+
+        <p class="muted">${escapeHTML(t.amount)} · ${escapeHTML(t.date)}</p>
+
+        <button class="danger" onclick="deleteTransaction(${i})">OBRIŠI TRANSAKCIJU</button>
+
+      </div>`).join("") || `<p class="muted">Nema transakcija.</p>`;
+
+}
+
+async function updatePrice(){
+
+  try{
+
+    const response=await fetch(
+
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur"
+
+    );
+
+    if(!response.ok)throw new Error();
+
+    const data=await response.json();
+
+    btcPrice=data.bitcoin.eur;
+
+    document.getElementById("btcPrice").textContent="€"+money(btcPrice);
+
+    document.getElementById("updated").textContent=
+
+      "Ažurirano "+new Date().toLocaleTimeString("hr-HR");
+
+    render();
+
+    convert();
+
+    convertWithdrawal();
+
+  }catch(e){
+
+    document.getElementById("updated").textContent="Cijena trenutačno nije dostupna.";
+
+  }
+
+}
+
+function convert(){
+
+  if(!btcPrice)return;
+
+  const eur=document.getElementById("eurInput");
+
+  const btc=document.getElementById("btcInput");
+
+  if(document.activeElement===eur){
+
+    btc.value=eur.value?(Number(eur.value)/btcPrice).toFixed(8):"";
+
+  }else if(document.activeElement===btc){
+
+    eur.value=btc.value?(Number(btc.value)*btcPrice).toFixed(2):"";
+
+  }
+
+}
+
+function convertWithdrawal(){
+
+  if(!btcPrice)return;
+
+  const eur=document.getElementById("withdrawEUR");
+
+  const btc=document.getElementById("withdrawBTC");
+
+  if(document.activeElement===eur){
+
+    btc.value=eur.value?(Number(eur.value)/btcPrice).toFixed(8):"";
+
+  }else if(document.activeElement===btc){
+
+    eur.value=btc.value?(Number(btc.value)*btcPrice).toFixed(2):"";
+
+  }
+
+}
+
+document.getElementById("eurInput").addEventListener("input",convert);
+
+document.getElementById("btcInput").addEventListener("input",convert);
+
+document.getElementById("withdrawEUR").addEventListener("input",convertWithdrawal);
+
+document.getElementById("withdrawBTC").addEventListener("input",convertWithdrawal);
+
+save();
+
+render();
+
+updatePrice();
+
+setInterval(updatePrice,10000);
+
+</script>
+
+</body>
+
+</html>
